@@ -259,5 +259,27 @@ async function handleScanResult(raw) {
 // Boot
 // ---------------------------------------------------------------
 (async function boot() {
-  await ensureIdentity();
+  try {
+    await ensureIdentity();
+  } catch (e) {
+    console.log("ensureIdentity failed:", e);
+  }
+
+  try {
+    await renderContacts();
+  } catch (e) {
+    console.log("renderContacts failed:", e);
+  }
+
+  try {
+    show('screen-contacts');
+  } catch (e) {
+    console.log("show screen failed:", e);
+  }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch((e) => {
+      console.log("SW failed:", e);
+    });
+  }
 })();
