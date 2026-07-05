@@ -82,6 +82,7 @@ async function idbClearAll() {
     tx.onerror = () => reject(tx.error);
   });
 }
+alert("APP JS LOADED");
 
 // ---------------------------------------------------------------
 // base64 helpers (UNCHANGED)
