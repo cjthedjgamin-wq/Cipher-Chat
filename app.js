@@ -1,164 +1,116 @@
 // =============================================================
-// Cipher - Stable Full Client (Safari-safe version)
+// Cipher - Stable UI Core (no black screen version)
 // =============================================================
 
-const enc = new TextEncoder();
-const dec = new TextDecoder();
+console.log("APP JS LOADED");
 
 // -----------------------------
-// DB
-// -----------------------------
-const DB_NAME = "cipher-db";
-const DB_VERSION = 1;
-
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains("identity"))
-        db.createObjectStore("identity", { keyPath: "id" });
-
-      if (!db.objectStoreNames.contains("contacts"))
-        db.createObjectStore("contacts", { keyPath: "id" });
-
-      if (!db.objectStoreNames.contains("settings"))
-        db.createObjectStore("settings", { keyPath: "key" });
-    };
-
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function idbGet(store, key) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, "readonly");
-    const req = tx.objectStore(store).get(key);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function idbPut(store, value) {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, "readwrite");
-    tx.objectStore(store).put(value);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// -----------------------------
-// UI helper
+// SAFE SCREEN SWITCHER
 // -----------------------------
 function show(id) {
-  document.querySelectorAll(".screen").forEach(s => s.style.display = "none");
+  console.log("Switching to:", id);
+
+  document.querySelectorAll(".screen").forEach(s => {
+    s.style.display = "none";
+  });
+
   const el = document.getElementById(id);
-  if (el) el.style.display = "block";
-}
 
-// -----------------------------
-// Identity (simplified safe version)
-// -----------------------------
-let myIdentity = null;
-
-async function ensureIdentity() {
-  const existing = await idbGet("identity", "me");
-  if (existing) {
-    myIdentity = existing;
+  if (!el) {
+    console.warn("Missing screen:", id);
+    document.getElementById("screen-contacts").style.display = "block";
     return;
   }
 
-  const pair = await crypto.subtle.generateKey(
-    { name: "ECDH", namedCurve: "P-256" },
-    true,
-    ["deriveBits"]
-  );
-
-  const pub = await crypto.subtle.exportKey("raw", pair.publicKey);
-
-  myIdentity = {
-    id: "me",
-    publicKey: btoa(String.fromCharCode(...new Uint8Array(pub)))
-  };
-
-  await idbPut("identity", myIdentity);
+  el.style.display = "block";
 }
 
 // -----------------------------
-// Contacts
+// BOOT
 // -----------------------------
-async function renderContacts() {
-  const list = document.getElementById("contact-list");
-  if (!list) return;
+(function boot() {
+  console.log("BOOT START");
 
-  const db = await openDB();
-  const tx = db.transaction("contacts", "readonly");
-  const req = tx.objectStore("contacts").getAll();
+  try {
+    show("screen-contacts");
+  } catch (e) {
+    console.error("BOOT ERROR:", e);
+  }
 
-  req.onsuccess = () => {
-    const contacts = req.result || [];
-    list.innerHTML = "";
+  bindUI();
 
-    contacts.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "contact-row";
-      div.textContent = c.name || "Friend";
-      div.onclick = () => alert("Open chat: " + c.name);
-      list.appendChild(div);
-    });
-
-    if (!contacts.length) {
-      list.innerHTML = "<p>No contacts yet</p>";
-    }
-  };
-}
+  console.log("BOOT DONE");
+})();
 
 // -----------------------------
-// QR
-// -----------------------------
-function showMyQR() {
-  const el = document.getElementById("qr");
-  if (!el || typeof QRCode === "undefined") return;
-
-  el.innerHTML = "";
-  QRCode.toCanvas(el, myIdentity.publicKey, function () {});
-}
-
-// -----------------------------
-// Buttons
+// UI BUTTON BINDING
 // -----------------------------
 function bindUI() {
-  const add = document.getElementById("btn-add-friend");
-  if (add) {
-    add.onclick = () => {
+  const addBtn = document.getElementById("btn-add-friend");
+  if (addBtn) {
+    addBtn.onclick = () => {
+      alert("add friend worked");
+
+      // IMPORTANT: safe navigation
       show("screen-show-qr");
-      showMyQR();
+
+      renderQR();
     };
   }
 
-  const back = document.querySelectorAll("[data-back]");
-  back.forEach(b => {
-    b.onclick = () => show("screen-contacts");
+  const backBtns = document.querySelectorAll("[data-back]");
+  backBtns.forEach(btn => {
+    btn.onclick = () => {
+      show("screen-contacts");
+    };
   });
+
+  const scanBtn = document.getElementById("btn-goto-scan");
+  if (scanBtn) {
+    scanBtn.onclick = () => {
+      alert("scan opened");
+      show("screen-scan");
+    };
+  }
+
+  const settingsBtn = document.getElementById("btn-open-settings");
+  if (settingsBtn) {
+    settingsBtn.onclick = () => {
+      alert("settings opened");
+      show("screen-settings");
+    };
+  }
 }
 
 // -----------------------------
-// Boot
+// QR (SAFE)
 // -----------------------------
-(async function boot() {
-  console.log("BOOT");
+function renderQR() {
+  const container = document.getElementById("qr");
+
+  if (!container) {
+    console.warn("QR container missing");
+    return;
+  }
+
+  container.innerHTML = "";
+
+  if (typeof QRCode === "undefined") {
+    container.innerText = "QRCode library not loaded";
+    return;
+  }
+
+  const data = "cipher-test-pairing";
 
   try {
-    await ensureIdentity();
-    await renderContacts();
-    bindUI();
-    show("screen-contacts");
+    QRCode.toCanvas(document.createElement("canvas"), data, function (err, canvas) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      container.appendChild(canvas);
+    });
   } catch (e) {
-    console.log("BOOT ERROR", e);
+    console.error("QR error:", e);
   }
-})();
+}
