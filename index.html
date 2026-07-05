@@ -6,20 +6,89 @@
   <title>Cipher Chat</title>
 
   <style>
-    /* minimal safety styling so screens don't overlap */
-    .screen { display: none; padding: 20px; }
-    #screen-contacts { display: block; }
+    :root {
+      --bg: #070b18;
+      --panel: #0e1630;
+      --panel-2: #111c3d;
+      --text: #eaf1ff;
+      --muted: #93a4c7;
+      --accent: #4ea1ff;
+      --accent-dark: #1f6fe5;
+      --border: rgba(255,255,255,0.08);
+    }
 
-    button { padding: 10px 14px; margin: 5px; }
-    .contact-row { padding: 10px; border-bottom: 1px solid #ddd; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at top, #0c1430, var(--bg));
+      color: var(--text);
+    }
+
+    .screen {
+      display: none;
+      padding: 18px;
+      min-height: 100vh;
+    }
+
+    #screen-contacts {
+      display: block;
+    }
+
+    h2 {
+      margin: 10px 0 18px;
+    }
+
+    button {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: white;
+      border: none;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin: 6px 0;
+      width: 100%;
+      font-weight: 600;
+    }
+
+    .contact-row {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 14px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+    }
+
+    #qr {
+      background: white;
+      padding: 16px;
+      border-radius: 16px;
+      display: inline-block;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 16px;
+      background: black;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    [data-back] {
+      background: rgba(255,255,255,0.08);
+    }
   </style>
 
-  <!-- Libraries (SAFE with defer) -->
+  <!-- ✅ APP ICONS -->
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+
+  <!-- Libraries -->
   <script defer src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
   <!-- Your app -->
-  <script defer src="app.js?v=1"></script>
+  <script defer src="app.js?v=2"></script>
 </head>
 
 <body>
@@ -31,19 +100,21 @@
     <div id="contact-list"></div>
 
     <button id="btn-add-friend">+ Add Friend</button>
+    <button id="btn-goto-scan">Scan QR</button>
+    <button id="btn-open-settings">Settings</button>
   </div>
 
   <!-- QR SCREEN -->
   <div id="screen-show-qr" class="screen">
     <h2>Your QR Code</h2>
     <div id="qr"></div>
-
     <button data-back="screen-contacts">Back</button>
   </div>
 
   <!-- SCAN SCREEN -->
   <div id="screen-scan" class="screen">
     <h2>Scan QR</h2>
+
     <video id="scan-video" autoplay playsinline></video>
     <canvas id="scan-canvas"></canvas>
 
