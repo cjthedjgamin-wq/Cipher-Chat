@@ -1,3 +1,10 @@
+if (typeof QRCode === "undefined") {
+  console.warn("QRCode library missing");
+}
+
+if (typeof jsQR === "undefined") {
+  console.warn("jsQR library missing");
+}
 // =============================================================
 // Cipher — a minimal, local-first, E2E encrypted chat
 // FIXED: QR scanning + Safari stability improvements
@@ -260,27 +267,25 @@ async function handleScanResult(raw) {
 // Boot
 // ---------------------------------------------------------------
 (async function boot() {
+  console.log("BOOT START");
+
   try {
     await ensureIdentity();
   } catch (e) {
-    console.log("ensureIdentity failed:", e);
+    console.log("identity error", e);
   }
 
   try {
     await renderContacts();
   } catch (e) {
-    console.log("renderContacts failed:", e);
+    console.log("render error", e);
   }
 
   try {
     show('screen-contacts');
   } catch (e) {
-    console.log("show screen failed:", e);
+    console.log("show error", e);
   }
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch((e) => {
-      console.log("SW failed:", e);
-    });
-  }
+  console.log("BOOT DONE");
 })();
